@@ -1,46 +1,33 @@
-import { createClient } from "@/lib/supabase/server";
-import { ProductGrid } from "@/components/ProductGrid";
-import type { Product } from "@/lib/types";
+"use client";
 
-export const revalidate = 60; // ISR: refresh catalog every minute
+import { useState } from "react";
+import { Customizer } from "@/components/Customizer";
+import { Button } from "@/components/ui/button";
 
-async function getProducts(): Promise<Product[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+const MOCKUP_SRC = "/mockups/tshirt-white-front.png";
 
-  if (error) {
-    console.error("Failed to load products:", error);
-    return [];
-  }
-  return data as Product[];
-}
-
-export default async function HomePage() {
-  const products = await getProducts();
+export default function CustomizerPage() {
+  const [designUrl, setDesignUrl] = useState<string | null>(null);
 
   return (
-    <div className="container py-6">
-      <section className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Your design. Your t-shirt.
-        </h1>
-        <p className="mt-1 max-w-prose text-muted-foreground">
-          Upload any artwork, preview it live on a mockup, and get it
-          delivered to any of Algeria's 58 wilayas — cash on delivery.
-        </p>
-        <a
-          href="/customizer"
-          className="mt-4 inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Start designing
-        </a>
-      </section>
+    <div className="container flex flex-col items-center py-6">
+      <h1 className="mb-1 text-xl font-bold">Design your t-shirt</h1>
+      <p className="mb-6 text-center text-sm text-muted-foreground">
+        Upload your artwork and position it exactly how you want it printed.
+      </p>
 
-      <ProductGrid products={products} />
+      <Customizer mockupSrc={MOCKUP_SRC} onDesignChange={setDesignUrl} />
+
+      <Button
+        className="mt-6 w-full max-w-[420px]"
+        disabled={!designUrl}
+        onClick={() => {
+          sessionStorage.setItem("pod:custom-design", designUrl ?? "");
+          window.location.href = "/checkout";
+        }}
+      >
+        Add to cart
+      </Button>
     </div>
   );
 }
