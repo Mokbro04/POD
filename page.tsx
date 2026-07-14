@@ -1,46 +1,33 @@
-import { createClient } from "@/lib/supabase/server";
-import { ProductGrid } from "@/components/ProductGrid";
-import type { Product } from "@/lib/types";
+"use client";
 
-export const revalidate = 60; // ISR: refresh catalog every minute
+import { useEffect, useState } from "react";
+import { CheckoutForm } from "@/components/CheckoutForm";
+import type { OrderItem } from "@/lib/types";
 
-async function getProducts(): Promise<Product[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+export default function CheckoutPage() {
+  const [items, setItems] = useState<OrderItem[]>([]);
 
-  if (error) {
-    console.error("Failed to load products:", error);
-    return [];
-  }
-  return data as Product[];
-}
-
-export default async function HomePage() {
-  const products = await getProducts();
+  useEffect(() => {
+    // In a full build this reads a persisted cart (Zustand/Supabase);
+    // here we fall back to whatever design was just customized.
+    const customDesign = sessionStorage.getItem("pod:custom-design");
+    setItems([
+      {
+        product_id: "custom-tee",
+        product_name: "Custom Design T-Shirt",
+        quantity: 1,
+        unit_price: 2500,
+        size: "M",
+        color: "White",
+        custom_design_url: customDesign || null,
+      },
+    ]);
+  }, []);
 
   return (
-    <div className="container py-6">
-      <section className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Your design. Your t-shirt.
-        </h1>
-        <p className="mt-1 max-w-prose text-muted-foreground">
-          Upload any artwork, preview it live on a mockup, and get it
-          delivered to any of Algeria's 58 wilayas — cash on delivery.
-        </p>
-        <a
-          href="/customizer"
-          className="mt-4 inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Start designing
-        </a>
-      </section>
-
-      <ProductGrid products={products} />
+    <div className="container max-w-lg py-6">
+      <h1 className="mb-6 text-xl font-bold">Checkout</h1>
+      <CheckoutForm items={items} />
     </div>
   );
 }
